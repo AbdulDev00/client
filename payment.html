@@ -434,62 +434,57 @@
     }
 
     // ── Pay ───────────────────────────────────────────────────────────────────
-    async function handlePay() {
-      const data  = collectData();
-      const error = validate(data);
-      if (error) { setStatus(error, true); return; }
-      setStatus('');
+   async function handlePay() {
+  const data  = collectData();
+  const error = validate(data);
+  if (error) { setStatus(error, true); return; }
+  setStatus('');
 
-      // Show processing overlay
-      document.getElementById('processingTitle').textContent = 'جاري تهيئة صفحة الدفع...';
-      document.getElementById('processingOverlay').classList.add('active');
-      document.getElementById('payBtn').disabled = true;
+  document.getElementById('processingTitle').textContent = 'جاري تهيئة صفحة الدفع...';
+  document.getElementById('processingOverlay').classList.add('active');
+  document.getElementById('payBtn').disabled = true;
 
-      try {
-        const res  = await fetch(`${API_BASE}/api/tabby/checkout`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ ...data, amount: data.amount.toFixed(2), currency: 'AED' }),
-        });
-        const json = await res.json();
+  try {
+    // Tabby installments → Tabby API. Everything else → Ziina
+    const isTabby   = data.payment_method === 'installments';
+    const endpoint  = isTabby ? '/api/tabby/checkout' : '/api/ziina/checkout';
 
-        if (json.web_url) {
-          // ✅ Real Tabby checkout URL — redirect
-          document.getElementById('processingTitle').textContent = 'جاري التحويل...';
-          window.location.href = json.web_url;
+    const res  = await fetch(`${API_BASE}${endpoint}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ ...data, amount: data.amount.toFixed(2), currency: 'AED' }),
+    });
+    const json = await res.json();
 
-        } else if (json.status === 'rejected') {
-          // Rejected at checkout creation
-          document.getElementById('processingOverlay').classList.remove('active');
-          document.getElementById('payBtn').disabled = false;
-          isEligible = false;
-          document.getElementById('tabbyBadge').classList.remove('visible');
-          document.getElementById('tabbyRejectedText').textContent =
-            'نأسف، تابي غير قادرة على الموافقة على هذا الطلب. يرجى التواصل معنا عبر واتساب.';
-          document.getElementById('tabbyRejectedMsg').classList.add('visible');
+    if (json.web_url) {
+      document.getElementById('processingTitle').textContent = 'جاري التحويل...';
+      window.location.href = json.web_url;
 
-        } else if (json.test_mode) {
-          // Test mode — go to demo gateway
-          document.getElementById('processingTitle').textContent = 'وضع الاختبار — جاري التحويل...';
-          const p = new URLSearchParams({
-            method: 'tabby', amount: data.amount,
-            name: data.name, email: data.email,
-            phone: data.phone, service: data.service,
-          });
-          window.location.href = `payment-gateway.html?${p}`;
+    } else if (json.test_mode) {
+      document.getElementById('processingTitle').textContent = 'وضع الاختبار — جاري التحويل...';
+      const p = new URLSearchParams({ method: data.payment_method, amount: data.amount, name: data.name, email: data.email, phone: data.phone, service: data.service });
+      window.location.href = `payment-gateway.html?${p}`;
 
-        } else {
-          throw new Error(json.message || 'تعذر الحصول على رابط الدفع.');
-        }
+    } else if (json.status === 'rejected') {
+      document.getElementById('processingOverlay').classList.remove('active');
+      document.getElementById('payBtn').disabled = false;
+      document.getElementById('tabbyBadge').classList.remove('visible');
+      document.getElementById('tabbyRejectedText').textContent =
+        'نأسف، تابي غير قادرة على الموافقة على هذا الطلب. يرجى التواصل معنا عبر واتساب.';
+      document.getElementById('tabbyRejectedMsg').classList.add('visible');
 
-      } catch (err) {
-        document.getElementById('processingOverlay').classList.remove('active');
-        document.getElementById('payBtn').disabled = false;
-        setStatus(err.message.includes('fetch')
-          ? 'تعذر الاتصال بالسيرفر. تأكد من تشغيل: npm start'
-          : err.message, true);
-      }
+    } else {
+      throw new Error(json.message || 'تعذر الحصول على رابط الدفع.');
     }
+
+  } catch (err) {
+    document.getElementById('processingOverlay').classList.remove('active');
+    document.getElementById('payBtn').disabled = false;
+    setStatus(err.message.includes('fetch')
+      ? 'تعذر الاتصال بالسيرفر.'
+      : err.message, true);
+  }
+}
 
     // ── Handle return from Tabby ──────────────────────────────────────────────
     (function handleReturn() {
