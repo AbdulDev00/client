@@ -9,104 +9,253 @@
     <link rel="shortcut icon" href="logo/logo.png" type="image/x-icon" />
 
     <style>
-      /* ── Tabby eligibility states ── */
-      .tabby-checking-indicator {
-        display: none; align-items: center; gap: 8px;
-        font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 10px;
+      /* ── Method cards ── */
+      .payment-method-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+      .payment-method-item {
+        border: 0.5px solid rgba(255,255,255,0.1);
+        border-radius: 14px; padding: 14px; cursor: pointer;
+        display: flex; flex-direction: column; gap: 8px;
+        background: rgba(255,255,255,0.03);
+        transition: border-color .15s, background .15s;
+        position: relative;
       }
-      .tabby-checking-indicator.visible { display: flex; }
-      .tabby-mini-spinner {
-        width: 14px; height: 14px; flex-shrink: 0;
-        border: 2px solid rgba(255,255,255,0.15);
-        border-top-color: #4BFDB3; border-radius: 50%;
-        animation: tspin 0.7s linear infinite;
+      .payment-method-item:has(input:checked) {
+        border: 1.5px solid #4BFDB3;
+        background: rgba(75,253,179,0.06);
       }
-      @keyframes tspin { to { transform: rotate(360deg); } }
+      .payment-method-item input[type="radio"] { display: none; }
+      .method-logos { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .method-logos img { height: 20px; object-fit: contain; }
+      .method-name { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.9); }
+      .method-sub  { font-size: 11px; color: rgba(255,255,255,0.35); line-height: 1.4; }
+      .method-check {
+        display: none; width: 18px; height: 18px; border-radius: 50%;
+        background: #4BFDB3; align-items: center; justify-content: center;
+        align-self: flex-end; margin-top: auto; flex-shrink: 0;
+        font-size: 9px; color: #0a0a0a;
+      }
+      .payment-method-item:has(input:checked) .method-check { display: flex; }
+      .method-select-title {
+        font-size: 12px; color: rgba(255,255,255,0.4); display: block;
+        margin-top: 18px; margin-bottom: 4px; letter-spacing: .04em; text-transform: uppercase;
+      }
 
+      /* ── Amount input ── */
+      .amount-field { grid-column: 1 / -1; }
+      .amount-input {
+        display: flex; align-items: center;
+        border: 1.5px solid rgba(255,255,255,0.1);
+        border-radius: 12px; overflow: hidden;
+        background: rgba(255,255,255,0.05);
+        transition: border-color .15s;
+      }
+      .amount-input:focus-within { border-color: rgba(75,253,179,0.5); }
+      .amount-input strong {
+        padding: 0 14px; height: 46px; display: flex; align-items: center;
+        font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.35);
+        border-right: 1.5px solid rgba(255,255,255,0.08); white-space: nowrap;
+        background: rgba(255,255,255,0.03);
+      }
+      .amount-input input {
+        flex: 1; height: 46px; background: transparent; border: none;
+        color: #fff; font-size: 18px; font-weight: 700; padding: 0 14px;
+        outline: none; letter-spacing: .01em;
+      }
+      .amount-input input::placeholder { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.2); }
+
+      /* ── Fee breakdown ── */
+      .fee-breakdown {
+        display: none; border: 0.5px solid rgba(255,255,255,0.08);
+        border-radius: 14px; overflow: hidden; margin-top: 14px;
+      }
+      .fee-breakdown.visible { display: block; }
+      .fee-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 11px 16px; font-size: 13px;
+        border-bottom: 0.5px solid rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.02);
+      }
+      .fee-row:last-child { border-bottom: none; background: rgba(255,255,255,0.04); padding: 13px 16px; }
+      .fee-label { color: rgba(255,255,255,0.45); display: flex; align-items: center; gap: 7px; }
+      .fee-value { font-weight: 600; direction: ltr; color: rgba(255,255,255,0.85); }
+      .fee-row:last-child .fee-value { color: #4BFDB3; font-size: 15px; }
+      .fee-row:last-child .fee-label { color: rgba(255,255,255,0.75); font-weight: 600; font-size: 14px; }
+      .fee-badge {
+        display: inline-block; background: rgba(251,191,36,0.12); color: #fbbf24;
+        border-radius: 5px; padding: 2px 6px; font-size: 10px; font-weight: 700;
+      }
+
+      /* ── Tabby badge ── */
       .tabby-badge {
-        display: none;
-        background: linear-gradient(135deg, rgba(75,253,179,0.1), rgba(75,253,179,0.03));
-        border: 1px solid rgba(75,253,179,0.22);
-        border-radius: 14px; padding: 16px; margin-top: 10px;
+        display: none; border: 1px solid rgba(75,253,179,0.2); border-radius: 14px;
+        padding: 16px; margin-top: 12px; background: rgba(75,253,179,0.04);
       }
       .tabby-badge.visible { display: block; }
+      .tabby-badge-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+      .tabby-badge-icon {
+        width: 36px; height: 36px; flex-shrink: 0; background: rgba(75,253,179,0.1);
+        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      }
+      .tabby-badge-icon img { height: 18px; object-fit: contain; }
+      .tabby-badge-title { font-size: 13px; font-weight: 700; color: #4BFDB3; margin: 0 0 2px; }
+      .tabby-badge-sub   { font-size: 11px; color: rgba(255,255,255,0.35); margin: 0; }
+      .tabby-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .tabby-chip {
+        background: rgba(75,253,179,0.06); border: 1px solid rgba(75,253,179,0.15);
+        border-radius: 10px; padding: 9px 5px; text-align: center;
+      }
+      .tabby-chip .chip-amount { display: block; font-size: 13px; font-weight: 800; color: #4BFDB3; direction: ltr; }
+      .tabby-chip .chip-label  { display: block; font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; line-height: 1.3; }
+      .tabby-chip.chip-now { background: rgba(75,253,179,0.12); border-color: rgba(75,253,179,0.3); }
+      .tabby-footer-note {
+        display: flex; align-items: center; gap: 6px; margin-top: 12px;
+        padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);
+        font-size: 11px; color: rgba(255,255,255,0.3);
+      }
+      .tabby-footer-note i { color: #4BFDB3; font-size: 11px; }
 
-      .tabby-badge-header {
-        display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-      }
-      .tabby-badge-header img { height: 20px; object-fit: contain; }
-      .tabby-badge-header strong { font-size: 14px; color: #4BFDB3; }
-      .tabby-badge-header p { font-size: 12px; color: rgba(255,255,255,0.45); margin: 2px 0 0; }
-
-      .tabby-installments {
-        display: flex; gap: 8px; flex-wrap: wrap;
-      }
-      .tabby-installment-pill {
-        flex: 1; min-width: 68px;
-        background: rgba(75,253,179,0.1);
-        border: 1px solid rgba(75,253,179,0.2);
-        border-radius: 20px; padding: 7px 10px;
-        text-align: center; color: #4BFDB3;
-        font-size: 13px; font-weight: 700;
-      }
-      .tabby-installment-pill span {
-        display: block; font-size: 10px;
-        font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 2px;
-      }
-
+      /* ── Tabby rejected ── */
       .tabby-rejected-msg {
-        display: none;
-        background: rgba(248,113,113,0.1);
-        border: 1px solid rgba(248,113,113,0.25);
-        border-radius: 10px; padding: 12px 14px; margin-top: 10px;
-        font-size: 13px; color: #fca5a5; gap: 10px;
-        align-items: flex-start;
+        display: none; background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2);
+        border-radius: 12px; padding: 14px 16px; margin-top: 12px; font-size: 13px;
+        color: #fca5a5; gap: 10px; align-items: flex-start;
       }
       .tabby-rejected-msg.visible { display: flex; }
       .tabby-rejected-msg i { flex-shrink: 0; margin-top: 2px; }
 
-      /* ── Payment methods display (info only) ── */
-      .tabby-methods {
-        display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;
-      }
-      .tabby-method-pill {
-        display: flex; align-items: center; gap: 7px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 10px; padding: 8px 12px;
-        font-size: 12px; color: rgba(255,255,255,0.65);
-      }
-      .tabby-method-pill img { height: 18px; object-fit: contain; }
-
-      /* ── Processing overlay ── */
-      .processing-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
-        z-index: 9999; flex-direction: column;
-        align-items: center; justify-content: center;
-        gap: 18px; color: #fff; text-align: center; padding: 24px;
-      }
-      .processing-overlay.active { display: flex; }
-      .processing-overlay h3 { font-size: 18px; font-weight: 700; margin: 0; }
-      .processing-overlay p  { color: rgba(255,255,255,0.5); font-size: 13px; margin: 0; }
-      .big-spinner {
-        width: 48px; height: 48px;
-        border: 3px solid rgba(255,255,255,0.15);
-        border-top-color: #4BFDB3; border-radius: 50%;
-        animation: tspin 0.75s linear infinite;
-      }
-      .processing-logo {
-        height: 40px; object-fit: contain;
-        background: #fff; border-radius: 10px; padding: 7px 14px;
-      }
-
-      /* ── Redirect notice (success/cancel/failed back from Tabby) ── */
+      /* ── Redirect notice ── */
       .redirect-notice {
-        display: none; align-items: flex-start; gap: 12px;
-        border-radius: 12px; padding: 14px 16px;
-        font-size: 14px; line-height: 1.5; margin-bottom: 16px;
+        display: none; align-items: flex-start; gap: 12px; border-radius: 12px;
+        padding: 14px 16px; font-size: 14px; line-height: 1.5; margin-bottom: 16px;
       }
       .redirect-notice i { flex-shrink: 0; margin-top: 2px; }
+
+      /* ── Pay button ── */
+      .pay-submit {
+        width: 100%; height: 52px; border-radius: 14px; border: none;
+        background: linear-gradient(135deg, #4BFDB3, #06b6d4);
+        color: #0a0a0a; font-size: 15px; font-weight: 800; cursor: pointer;
+        margin-top: 18px; display: flex; align-items: center; justify-content: center;
+        gap: 10px; transition: opacity .2s, transform .2s, box-shadow .2s;
+        box-shadow: 0 4px 20px rgba(75,253,179,0.18);
+      }
+      .pay-submit:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(75,253,179,0.26); }
+      .pay-submit:active { transform: translateY(0); }
+      .pay-submit:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+      .pay-secure-note {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        font-size: 11.5px; color: rgba(255,255,255,0.28); margin-top: 10px;
+      }
+      .pay-secure-note i { font-size: 11px; color: #4BFDB3; }
+      .payment-status.error { color: #fca5a5; font-size: 13px; margin-top: 8px; display: block; text-align: center; }
+
+      /* ════════════════════════════════════════════
+         LOADER CARD
+      ════════════════════════════════════════════ */
+      .payment-loader-wrap {
+        display: none; position: fixed; inset: 0;
+        background: rgba(5, 8, 14, 0.82);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 9999;
+        align-items: center; justify-content: center;
+      }
+      .payment-loader-wrap.active { display: flex; }
+
+      .loader-card {
+        background: linear-gradient(160deg, #0d1520 0%, #0a1018 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 36px 32px 32px;
+        width: 320px;
+        display: flex; flex-direction: column;
+        align-items: center; gap: 0;
+        text-align: center;
+        animation: loaderCardIn .3s cubic-bezier(.34,1.4,.64,1) both;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05) inset;
+      }
+      @keyframes loaderCardIn {
+        from { transform: scale(.84) translateY(20px); opacity: 0; }
+        to   { transform: scale(1)   translateY(0);    opacity: 1; }
+      }
+
+      /* Spinner ring */
+      .loader-spinner-wrap { position: relative; width: 68px; height: 68px; margin-bottom: 24px; }
+      .loader-spinner-track {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 2.5px solid rgba(255,255,255,0.06);
+      }
+      .loader-spinner-ring {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 2.5px solid transparent;
+        border-top-color: #4BFDB3;
+        border-right-color: rgba(75,253,179,0.3);
+        animation: lspin .75s linear infinite;
+      }
+      @keyframes lspin { to { transform: rotate(360deg); } }
+
+      /* Method logo pill inside spinner */
+      .loader-method-pill {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .loader-method-pill-inner {
+        width: 42px; height: 42px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+      }
+      /* Card/Ziina pill — dark blue */
+      .loader-method-pill-inner.pill-card {
+        background: linear-gradient(135deg, #1a2744, #1e3a6e);
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+      /* Tabby pill — dark green */
+      .loader-method-pill-inner.pill-tabby {
+        background: linear-gradient(135deg, #0a2a1e, #0d3d28);
+        border: 1px solid rgba(75,253,179,0.2);
+      }
+      .loader-method-pill-inner img { width: 26px; height: 26px; object-fit: contain; }
+
+      /* Text */
+      .loader-card-title {
+        font-size: 16px; font-weight: 700; color: #ffffff;
+        margin: 0 0 6px; line-height: 1.4; letter-spacing: -.01em;
+      }
+      .loader-card-sub {
+        font-size: 12px; color: rgba(255,255,255,0.35);
+        margin: 0 0 22px; line-height: 1.5;
+      }
+
+      /* Step dots */
+      .loader-steps { display: flex; gap: 8px; }
+      .loader-step {
+        height: 3px; border-radius: 2px;
+        background: rgba(255,255,255,0.1);
+        transition: background .35s, width .35s;
+        width: 20px;
+      }
+      .loader-step.active { background: #4BFDB3; width: 32px; }
+      .loader-step.done   { background: rgba(75,253,179,0.35); width: 20px; }
+
+      /* Divider */
+      .loader-divider {
+        width: 100%; height: 1px;
+        background: rgba(255,255,255,0.05);
+        margin: 22px 0 18px;
+      }
+
+      /* Secure badge at bottom of card */
+      .loader-secure {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 11px; color: rgba(255,255,255,0.25);
+      }
+      .loader-secure i { color: #4BFDB3; font-size: 11px; }
+
+      @media (max-width: 480px) {
+        .tabby-chips { grid-template-columns: repeat(2,1fr); }
+        .payment-method-list { grid-template-columns: 1fr; }
+        .loader-card { width: calc(100vw - 40px); padding: 28px 24px 24px; }
+      }
     </style>
   </head>
 
@@ -170,7 +319,7 @@
 
         <div class="payment-panel">
 
-          <!-- Redirect notice (shown when returning from Tabby) -->
+          <!-- Redirect notice (success / cancelled / failed return) -->
           <div class="redirect-notice" id="redirectNotice"></div>
 
           <div id="paymentForm" class="payment-form">
@@ -202,7 +351,7 @@
                 </select>
               </label>
               <label class="amount-field">
-                <span>المبلغ</span>
+                <span>المبلغ المطلوب (AED)</span>
                 <div class="amount-input">
                   <strong>AED</strong>
                   <input type="number" id="amountInput" min="1" step="0.01" placeholder="0.00" />
@@ -210,80 +359,111 @@
               </label>
             </div>
 
-            <!-- Summary -->
-            <div class="payment-summary">
-              <div><span>الخدمة</span><strong id="summaryService">لم يتم الاختيار</strong></div>
-              <div><span>المبلغ</span><strong id="summaryAmount">AED 0.00</strong></div>
+            <!-- Payment method selector -->
+            <div class="payment-method-select">
+              <span class="method-select-title">اختر طريقة الدفع</span>
+              <div class="payment-method-list">
+
+                <label class="payment-method-item" id="cardMethodLabel">
+                  <input type="radio" name="paymentMethod" value="card" id="cardMethodInput" checked />
+                  <div class="method-logos">
+                    <img src="logo/visa.png" alt="Visa" />
+                    <img src="logo/master.png" alt="Mastercard" />
+                    <img src="logo/Apple_Pay_logo.svg.png" alt="Apple Pay" style="height:16px;" />
+                    <img src="logo/Google-Pay-logo.png" alt="Google Pay" style="height:16px;" />
+                  </div>
+                  <div class="method-name">بطاقة ودفع سريع</div>
+                  <div class="method-sub">Visa • Mastercard • Apple Pay • Google Pay</div>
+                  <span class="method-check"><i class="fa-solid fa-check"></i></span>
+                </label>
+
+                <label class="payment-method-item" id="tabbyMethodLabel">
+                  <input type="radio" name="paymentMethod" value="installments" id="tabbyMethodInput" />
+                  <div class="method-logos">
+                    <img src="logo/tabby.png" alt="Tabby" style="height:22px;" />
+                  </div>
+                  <div class="method-name">تقسيط تابي</div>
+                  <div class="method-sub">4 دفعات متساوية • بدون فائدة</div>
+                  <span class="method-check"><i class="fa-solid fa-check"></i></span>
+                </label>
+
+              </div>
             </div>
 
-            <!-- Tabby eligibility checking spinner -->
-            <div class="tabby-checking-indicator" id="tabbyCheckingIndicator">
-              <div class="tabby-mini-spinner"></div>
-              <span>جاري التحقق من خيارات الدفع المتاحة...</span>
+            <!-- Fee breakdown -->
+            <div class="fee-breakdown" id="feeBreakdown">
+              <div class="fee-row">
+                <span class="fee-label">المبلغ الأصلي</span>
+                <span class="fee-value" id="feeBase">AED 0.00</span>
+              </div>
+              <div class="fee-row">
+                <span class="fee-label">
+                  <span class="fee-badge">5%</span>
+                  ضريبة القيمة المضافة (VAT)
+                </span>
+                <span class="fee-value" id="feeVat">AED 0.00</span>
+              </div>
+              <div class="fee-row">
+                <span class="fee-label">
+                  <span class="fee-badge" id="serviceBadge">1%</span>
+                  رسوم الخدمة
+                </span>
+                <span class="fee-value" id="feeService">AED 0.00</span>
+              </div>
+              <div class="fee-row total">
+                <span>الإجمالي المطلوب دفعه</span>
+                <span class="fee-value" id="feeTotal">AED 0.00</span>
+              </div>
+            </div>
+
+            <!-- Tabby 4-installment preview -->
+            <div class="tabby-badge" id="tabbyBadge">
+              <div class="tabby-badge-header">
+                <div class="tabby-badge-icon">
+                  <img src="logo/tabby.png" alt="Tabby" />
+                </div>
+                <div>
+                  <p class="tabby-badge-title">قسّم دفعتك على 4 أشهر — بدون فوائد</p>
+                  <p class="tabby-badge-sub">ستختار طريقة الدفع في الخطوة التالية على تابي</p>
+                </div>
+              </div>
+              <div class="tabby-chips" id="tabbyChips"></div>
+              <div class="tabby-footer-note">
+                <i class="fa-solid fa-circle-check"></i>
+                بدون فائدة • بدون رسوم خفية • الدفع عبر تابي آمن ومضمون
+              </div>
             </div>
 
             <!-- Tabby rejected -->
             <div class="tabby-rejected-msg" id="tabbyRejectedMsg">
               <i class="fa-solid fa-circle-exclamation"></i>
-              <span id="tabbyRejectedText">نأسف، خدمة التقسيط غير متاحة لهذا الطلب. يمكنك الدفع الكامل بالبطاقة أو Apple/Google Pay.</span>
-            </div>
-
-            <!-- Tabby installments badge (shown when eligible) -->
-            <div class="tabby-badge" id="tabbyBadge">
-              <div class="tabby-badge-header">
-                <img src="logo/tabby.png" alt="Tabby" />
-                <div>
-                  <strong>التقسيط متاح — قسّم على 4 بدون فوائد</strong>
-                  <p>ستختار طريقة الدفع في الخطوة التالية</p>
-                </div>
-              </div>
-              <div class="tabby-installments" id="tabbyInstallments"></div>
-            </div>
-
-            <!-- Selectable payment methods -->
-            <div class="payment-method-select">
-              <span class="method-select-title">اختر طريقة الدفع</span>
-              <div class="payment-method-list">
-              <label class="payment-method-item card-method">
-  <input type="radio" name="paymentMethod" value="credit_card_installments" checked />
-  <img src="logo/visa.png" alt="Visa" />
-  <img src="logo/master.png" alt="Mastercard" />
-  <strong>بطاقة ائتمان</strong>
-</label>
-               <!-- Apple Pay -->
-<label class="payment-method-item">
-  <input type="radio" name="paymentMethod" value="apple_pay" />
-  <img src="logo/Apple_Pay_logo.svg.png" alt="Apple Pay" />
-  <strong>Apple Pay</strong>
-</label>
-
-<!-- Google Pay -->
-<label class="payment-method-item">
-  <input type="radio" name="paymentMethod" value="google_pay" />
-  <img src="logo/Google-Pay-logo.png" alt="Google Pay" />
-  <strong>Google Pay</strong>
-</label>
-        <!-- Tabby -->
-<label class="payment-method-item" id="tabbyMethodLabel">
-  <input type="radio" name="paymentMethod" value="installments" id="tabbyMethodInput" />
-  <img src="logo/tabby.png" alt="Tabby" />
-  <strong>تقسيط تابي</strong>
-</label>
+              <div>
+                <span id="tabbyRejectedText">نأسف، تابي غير قادرة على الموافقة على هذا الطلب.</span>
+                <br />
+                <span style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:4px;display:block;">
+                  يمكنك الدفع بالبطاقة أو Apple/Google Pay، أو
+                  <a href="https://wa.me/971564630165" target="_blank" style="color:#fca5a5;text-decoration:underline;">تواصل معنا عبر واتساب</a>.
+                </span>
               </div>
             </div>
 
             <!-- Pay button -->
             <button type="button" class="pay-submit" id="payBtn" onclick="handlePay()">
               <i class="fa-solid fa-lock"></i>
-              متابعة الدفع
+              <span id="payBtnText">ادفع الآن</span>
             </button>
+
+            <div class="pay-secure-note">
+              <i class="fa-solid fa-shield-halved"></i>
+              مدفوعاتك مشفرة بالكامل وآمنة
+            </div>
 
             <p class="payment-status" id="paymentStatus" role="status"></p>
           </div>
 
           <!-- Accepted payments strip -->
           <div class="accepted-payments">
-            <span>وسائل الدفع المقبولة عبر تابي</span>
+            <span>وسائل الدفع المقبولة</span>
             <div class="accepted-method-list">
               <div class="accepted-method-item"><img src="logo/Apple_Pay_logo.svg.png" alt="Apple Pay" /></div>
               <div class="accepted-method-item"><img src="logo/Google-Pay-logo.png" alt="Google Pay" /></div>
@@ -299,122 +479,190 @@
       </section>
     </main>
 
-    <!-- Processing overlay -->
-    <div class="processing-overlay" id="processingOverlay">
-      <div class="big-spinner"></div>
-      <img src="logo/tabby.png" alt="Tabby" class="processing-logo" />
-      <h3 id="processingTitle">جاري تهيئة صفحة الدفع...</h3>
-      <p>سيتم تحويلك لإتمام الدفع — لا تغلق الصفحة</p>
+    <!-- ══ LOADER CARD ══ -->
+    <div class="payment-loader-wrap" id="processingOverlay">
+      <div class="loader-card" dir="rtl">
+
+        <!-- Spinner with method logo in the centre -->
+        <div class="loader-spinner-wrap">
+          <div class="loader-spinner-track"></div>
+          <div class="loader-spinner-ring"></div>
+          <div class="loader-method-pill">
+            <div class="loader-method-pill-inner pill-card" id="loaderPillInner">
+              <img id="loaderMethodImg" src="logo/visa.png" alt="" />
+            </div>
+          </div>
+        </div>
+
+        <p class="loader-card-title" id="processingTitle">جاري تهيئة صفحة الدفع...</p>
+        <p class="loader-card-sub">يرجى الانتظار — لا تغلق هذه الصفحة</p>
+
+        <!-- Animated step bar -->
+        <div class="loader-steps">
+          <div class="loader-step active" id="lstep0"></div>
+          <div class="loader-step"        id="lstep1"></div>
+          <div class="loader-step"        id="lstep2"></div>
+        </div>
+
+        <div class="loader-divider"></div>
+
+        <div class="loader-secure">
+          <i class="fa-solid fa-lock"></i>
+          <span>دفع آمن ومشفر بالكامل</span>
+        </div>
+
+      </div>
     </div>
 
     <script>
-    // ── DOM ───────────────────────────────────────────────────────────────────
+    // ── Mobile menu ───────────────────────────────────────────
     document.getElementById('hamburger').addEventListener('click', () =>
       document.getElementById('mobileMenu').classList.toggle('active'));
 
     const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:4173' : '';
 
-    // ── Summary ───────────────────────────────────────────────────────────────
-    let eligibilityTimer = null;
-    let isEligible = false;
+    // ── Loader state (module-scoped so closeLoader can reach it) ──
+    let _loaderInterval = null;
+    let _loaderStep     = 0;
 
-    function updateSummary() {
-      const amount  = Number(document.getElementById('amountInput').value || 0);
-      const service = document.getElementById('serviceSelect').value;
-      document.getElementById('summaryService').textContent = service || 'لم يتم الاختيار';
-      document.getElementById('summaryAmount').textContent  = `AED ${amount.toFixed(2)}`;
-      scheduleEligibilityCheck();
-    }
-
-    ['serviceSelect','amountInput'].forEach(id =>
-      document.getElementById(id).addEventListener('change', updateSummary));
-    document.getElementById('amountInput').addEventListener('input', updateSummary);
-    ['customerEmail','customerPhone'].forEach(id =>
-      document.getElementById(id).addEventListener('input', scheduleEligibilityCheck));
-
-    // ── Tabby eligibility pre-check ───────────────────────────────────────────
-    function scheduleEligibilityCheck() {
-      clearTimeout(eligibilityTimer);
-      const amount = Number(document.getElementById('amountInput').value || 0);
-      const email  = document.getElementById('customerEmail').value.trim();
-      const phone  = document.getElementById('customerPhone').value.trim();
-
-      if (amount < 1 || !email || !phone) {
-        resetEligibilityUI();
-        return;
+    function openLoader(isTabby) {
+      // Set the correct logo + pill style
+      const img   = document.getElementById('loaderMethodImg');
+      const pill  = document.getElementById('loaderPillInner');
+      if (isTabby) {
+        img.src = 'logo/tabby.png';
+        pill.className = 'loader-method-pill-inner pill-tabby';
+      } else {
+        img.src = 'logo/visa.png';
+        pill.className = 'loader-method-pill-inner pill-card';
       }
-      eligibilityTimer = setTimeout(runEligibilityCheck, 700);
-    }
 
-    function resetEligibilityUI() {
-      isEligible = false;
-      document.getElementById('tabbyBadge').classList.remove('visible');
-      document.getElementById('tabbyRejectedMsg').classList.remove('visible');
-      document.getElementById('tabbyCheckingIndicator').classList.remove('visible');
-    }
+      // Reset dots
+      _loaderStep = 0;
+      for (let i = 0; i < 3; i++) {
+        document.getElementById(`lstep${i}`).className =
+          'loader-step' + (i === 0 ? ' active' : '');
+      }
 
-    async function runEligibilityCheck() {
-      const amount = Number(document.getElementById('amountInput').value || 0);
-      const email  = document.getElementById('customerEmail').value.trim();
-      const phone  = document.getElementById('customerPhone').value.trim();
-      if (amount < 1 || !email.includes('@') || !phone) return;
+      document.getElementById('processingTitle').textContent = 'جاري تهيئة صفحة الدفع...';
+      document.getElementById('processingOverlay').classList.add('active');
+      document.getElementById('payBtn').disabled = true;
 
-      document.getElementById('tabbyCheckingIndicator').classList.add('visible');
-      document.getElementById('tabbyBadge').classList.remove('visible');
-      document.getElementById('tabbyRejectedMsg').classList.remove('visible');
-
-      try {
-        const res  = await fetch(`${API_BASE}/api/tabby/eligibility`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: amount.toFixed(2), currency: 'AED', buyer_email: email, buyer_phone: phone }),
-        });
-        const data = await res.json();
-        document.getElementById('tabbyCheckingIndicator').classList.remove('visible');
-
-        if (data.eligible) {
-          isEligible = true;
-          renderInstallments(amount);
-          document.getElementById('tabbyBadge').classList.add('visible');
-          document.getElementById('tabbyRejectedMsg').classList.remove('visible');
-        } else {
-          isEligible = false;
-          document.getElementById('tabbyBadge').classList.remove('visible');
-          const msgs = {
-            order_amount_too_high: 'المبلغ أعلى من الحد المسموح به للتقسيط. يمكنك الدفع كاملاً بالبطاقة أو Apple/Google Pay.',
-            order_amount_too_low:  'المبلغ أقل من الحد الأدنى للتقسيط. يمكنك الدفع كاملاً بالبطاقة أو Apple/Google Pay.',
-            not_available:         'خدمة التقسيط غير متاحة لهذا الطلب. يمكنك الدفع الكامل بالبطاقة أو Apple/Google Pay.',
-          };
-          document.getElementById('tabbyRejectedText').textContent =
-            msgs[data.rejection_reason] || msgs.not_available;
-          document.getElementById('tabbyRejectedMsg').classList.add('visible');
+      // Animate step dots
+      _loaderInterval = setInterval(() => {
+        _loaderStep++;
+        if (_loaderStep > 2) { clearInterval(_loaderInterval); _loaderInterval = null; return; }
+        for (let i = 0; i < 3; i++) {
+          document.getElementById(`lstep${i}`).className =
+            'loader-step' + (i < _loaderStep ? ' done' : i === _loaderStep ? ' active' : '');
         }
-      } catch {
-        // Fail open — hide spinner, keep badge hidden, let user proceed
-        document.getElementById('tabbyCheckingIndicator').classList.remove('visible');
-        isEligible = true; // optimistic
-        renderInstallments(Number(document.getElementById('amountInput').value || 0));
+      }, 1400);
+    }
+
+    function closeLoader() {
+      if (_loaderInterval) { clearInterval(_loaderInterval); _loaderInterval = null; }
+      document.getElementById('processingOverlay').classList.remove('active');
+      document.getElementById('payBtn').disabled = false;
+    }
+
+    // Close loader on ANY page show — handles bfcache back-navigation from Tabby/Ziina
+    window.addEventListener('pageshow', () => closeLoader());
+
+    // ── Fee rates ─────────────────────────────────────────────
+    const FEES = {
+      card:         { vat: 0.05, service: 0.01 },
+      installments: { vat: 0.05, service: 0.05 },
+    };
+
+    function calcFees(baseAmount, method) {
+      const rates   = FEES[method] || FEES.card;
+      const vat     = baseAmount * rates.vat;
+      const service = baseAmount * rates.service;
+      const total   = baseAmount + vat + service;
+      return { base: baseAmount, vat, service, total, rates };
+    }
+
+    function selectedMethod() {
+      return document.querySelector('input[name="paymentMethod"]:checked')?.value || 'card';
+    }
+
+    // ── Update fee breakdown ──────────────────────────────────
+    function updateFees() {
+      const base   = Number(document.getElementById('amountInput').value || 0);
+      const method = selectedMethod();
+      if (base < 1) { document.getElementById('feeBreakdown').classList.remove('visible'); return; }
+      const f = calcFees(base, method);
+      document.getElementById('feeBreakdown').classList.add('visible');
+      document.getElementById('feeBase').textContent    = `AED ${f.base.toFixed(2)}`;
+      document.getElementById('feeVat').textContent     = `AED ${f.vat.toFixed(2)}`;
+      document.getElementById('feeService').textContent = `AED ${f.service.toFixed(2)}`;
+      document.getElementById('feeTotal').textContent   = `AED ${f.total.toFixed(2)}`;
+      document.getElementById('serviceBadge').textContent = method === 'installments' ? '5%' : '1%';
+    }
+
+    // ── Tabby chips ───────────────────────────────────────────
+    function renderTabbyChips(base) {
+      const f    = calcFees(base, 'installments');
+      const each = (f.total / 4).toFixed(2);
+      const steps = [
+        { label: 'الآن',       now: true  },
+        { label: 'بعد شهر',    now: false },
+        { label: 'بعد شهرين',  now: false },
+        { label: 'بعد 3 أشهر', now: false },
+      ];
+      document.getElementById('tabbyChips').innerHTML = steps
+        .map(s => `<div class="tabby-chip${s.now ? ' chip-now' : ''}">
+          <span class="chip-amount">AED ${each}</span>
+          <span class="chip-label">${s.label}</span>
+        </div>`).join('');
+    }
+
+    function updateTabbyPreview() {
+      const base   = Number(document.getElementById('amountInput').value || 0);
+      const method = selectedMethod();
+      document.getElementById('tabbyRejectedMsg').classList.remove('visible');
+      if (method === 'installments' && base >= 1) {
+        renderTabbyChips(base);
         document.getElementById('tabbyBadge').classList.add('visible');
+      } else {
+        document.getElementById('tabbyBadge').classList.remove('visible');
       }
     }
 
-    function renderInstallments(total) {
-      const each   = (total / 4).toFixed(2);
-      const labels = ['الآن', 'بعد شهر', 'بعد شهرين', 'بعد 3 أشهر'];
-      document.getElementById('tabbyInstallments').innerHTML =
-        labels.map(l => `<div class="tabby-installment-pill">AED ${each}<span>${l}</span></div>`).join('');
+    function updatePayBtn() {
+      const method = selectedMethod();
+      const base   = Number(document.getElementById('amountInput').value || 0);
+      let label    = 'ادفع الآن';
+      if (method === 'installments' && base >= 1) {
+        const each = (calcFees(base, 'installments').total / 4).toFixed(2);
+        label = `ابدأ التقسيط — AED ${each} الآن`;
+      }
+      document.getElementById('payBtnText').textContent = label;
     }
 
-    // ── Validation ────────────────────────────────────────────────────────────
+    function onFormChange() { updateFees(); updateTabbyPreview(); updatePayBtn(); }
+
+    document.getElementById('amountInput').addEventListener('input',  onFormChange);
+    document.getElementById('amountInput').addEventListener('change', onFormChange);
+    document.getElementById('serviceSelect').addEventListener('change', onFormChange);
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(el =>
+      el.addEventListener('change', onFormChange));
+
+    // ── Collect & validate ────────────────────────────────────
     function collectData() {
-      const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked');
+      const method = selectedMethod();
+      const base   = Number(document.getElementById('amountInput').value || 0);
+      const f      = calcFees(base, method);
       return {
-        name:    document.getElementById('customerName').value.trim(),
-        phone:   document.getElementById('customerPhone').value.trim(),
-        email:   document.getElementById('customerEmail').value.trim(),
-        service: document.getElementById('serviceSelect').value,
-        amount:  Number(document.getElementById('amountInput').value || 0),
-        payment_method: selectedMethod ? selectedMethod.value : 'credit_card_installments',
+        name:           document.getElementById('customerName').value.trim(),
+        phone:          document.getElementById('customerPhone').value.trim(),
+        email:          document.getElementById('customerEmail').value.trim(),
+        service:        document.getElementById('serviceSelect').value,
+        amount:         base,
+        totalAmount:    f.total,
+        vatAmount:      f.vat,
+        serviceAmount:  f.service,
+        payment_method: method,
       };
     }
 
@@ -433,76 +681,104 @@
       el.className   = 'payment-status' + (isError ? ' error' : '');
     }
 
-    // ── Pay ───────────────────────────────────────────────────────────────────
-   async function handlePay() {
-  const data  = collectData();
-  const error = validate(data);
-  if (error) { setStatus(error, true); return; }
-  setStatus('');
+    // ── Pay ───────────────────────────────────────────────────
+    async function handlePay() {
+      const data  = collectData();
+      const error = validate(data);
+      if (error) { setStatus(error, true); return; }
+      setStatus('');
 
-  document.getElementById('processingTitle').textContent = 'جاري تهيئة صفحة الدفع...';
-  document.getElementById('processingOverlay').classList.add('active');
-  document.getElementById('payBtn').disabled = true;
+      const isTabby  = data.payment_method === 'installments';
+      const endpoint = isTabby ? '/api/tabby/checkout' : '/api/ziina/checkout';
 
-  try {
-    // Tabby installments → Tabby API. Everything else → Ziina
-    const isTabby   = data.payment_method === 'installments';
-    const endpoint  = isTabby ? '/api/tabby/checkout' : '/api/ziina/checkout';
+      openLoader(isTabby);
 
-    const res  = await fetch(`${API_BASE}${endpoint}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ ...data, amount: data.amount.toFixed(2), currency: 'AED' }),
-    });
-    const json = await res.json();
+      try {
+        const chargeAmount = data.totalAmount.toFixed(2);
 
-    if (json.web_url) {
-      document.getElementById('processingTitle').textContent = 'جاري التحويل...';
-      window.location.href = json.web_url;
+        const res  = await fetch(`${API_BASE}${endpoint}`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            name:           data.name,
+            phone:          data.phone,
+            email:          data.email,
+            service:        data.service,
+            amount:         chargeAmount,
+            currency:       'AED',
+            payment_method: data.payment_method,
+          }),
+        });
+        const json = await res.json();
 
-    } else if (json.test_mode) {
-      document.getElementById('processingTitle').textContent = 'وضع الاختبار — جاري التحويل...';
-      const p = new URLSearchParams({ method: data.payment_method, amount: data.amount, name: data.name, email: data.email, phone: data.phone, service: data.service });
-      window.location.href = `payment-gateway.html?${p}`;
+        if (json.web_url) {
+          document.getElementById('processingTitle').textContent = 'جاري التحويل...';
+          window.location.href = json.web_url;
 
-    } else if (json.status === 'rejected') {
-      document.getElementById('processingOverlay').classList.remove('active');
-      document.getElementById('payBtn').disabled = false;
-      document.getElementById('tabbyBadge').classList.remove('visible');
-      document.getElementById('tabbyRejectedText').textContent =
-        'نأسف، تابي غير قادرة على الموافقة على هذا الطلب. يرجى التواصل معنا عبر واتساب.';
-      document.getElementById('tabbyRejectedMsg').classList.add('visible');
+        } else if (json.test_mode) {
+          document.getElementById('processingTitle').textContent = 'وضع الاختبار — جاري التحويل...';
+          const p = new URLSearchParams({
+            method:  data.payment_method,
+            amount:  chargeAmount,
+            name:    data.name,
+            email:   data.email,
+            phone:   data.phone,
+            service: data.service,
+          });
+          window.location.href = `payment-gateway.html?${p}`;
 
-    } else {
-      throw new Error(json.message || 'تعذر الحصول على رابط الدفع.');
+        } else if (json.status === 'rejected') {
+          closeLoader();
+          document.getElementById('tabbyBadge').classList.remove('visible');
+          const rejMsgs = {
+            order_amount_too_high: 'المبلغ أعلى من الحد المسموح به لتابي.',
+            order_amount_too_low:  'المبلغ أقل من الحد الأدنى لتابي.',
+          };
+          document.getElementById('tabbyRejectedText').textContent =
+            rejMsgs[json.rejection_reason] || 'نأسف، تابي غير قادرة على الموافقة على هذا الطلب.';
+          document.getElementById('tabbyRejectedMsg').classList.add('visible');
+
+        } else {
+          throw new Error(json.message || 'تعذر الحصول على رابط الدفع.');
+        }
+
+      } catch (err) {
+        closeLoader();
+        setStatus(
+          err.message.toLowerCase().includes('fetch')
+            ? 'تعذر الاتصال بالسيرفر. تحقق من اتصالك وحاول مجدداً.'
+            : err.message,
+          true
+        );
+      }
     }
 
-  } catch (err) {
-    document.getElementById('processingOverlay').classList.remove('active');
-    document.getElementById('payBtn').disabled = false;
-    setStatus(err.message.includes('fetch')
-      ? 'تعذر الاتصال بالسيرفر.'
-      : err.message, true);
-  }
-}
-
-    // ── Handle return from Tabby ──────────────────────────────────────────────
+    // ── Handle return redirects ───────────────────────────────
     (function handleReturn() {
       const status = new URLSearchParams(window.location.search).get('status');
       if (!status) return;
-
       const cfg = {
-        success:   { bg:'rgba(74,222,128,0.1)',   border:'rgba(74,222,128,0.25)',   color:'#4ade80', icon:'fa-circle-check',      text:'تمت عملية الدفع بنجاح! شكراً لك — ستصلك رسالة تأكيد على بريدك الإلكتروني.' },
-        cancelled: { bg:'rgba(251,191,36,0.08)',   border:'rgba(251,191,36,0.22)',   color:'#fbbf24', icon:'fa-circle-xmark',      text:'ألغيت عملية الدفع. يمكنك المحاولة مجدداً أو التواصل معنا عبر واتساب.' },
-        failed:    { bg:'rgba(248,113,113,0.08)',  border:'rgba(248,113,113,0.22)',  color:'#f87171', icon:'fa-triangle-exclamation', text:'لم تتم عملية الدفع. يرجى المحاولة مرة أخرى أو اختيار وسيلة دفع مختلفة.' },
+        success: {
+          bg: 'rgba(74,222,128,0.08)', border: 'rgba(74,222,128,0.22)', color: '#4ade80',
+          icon: 'fa-circle-check',
+          text: 'تمت عملية الدفع بنجاح! شكراً لك — ستصلك رسالة تأكيد على بريدك الإلكتروني.',
+        },
+        cancelled: {
+          bg: 'rgba(251,191,36,0.06)', border: 'rgba(251,191,36,0.2)', color: '#fbbf24',
+          icon: 'fa-circle-xmark',
+          text: 'ألغيت عملية الدفع. يمكنك المحاولة مجدداً أو التواصل معنا عبر واتساب.',
+        },
+        failed: {
+          bg: 'rgba(248,113,113,0.07)', border: 'rgba(248,113,113,0.2)', color: '#f87171',
+          icon: 'fa-triangle-exclamation',
+          text: 'لم تتم عملية الدفع. يرجى المحاولة مرة أخرى أو اختيار وسيلة دفع مختلفة.',
+        },
       };
-
       const s = cfg[status];
       if (!s) return;
-
       const el = document.getElementById('redirectNotice');
       el.style.cssText = `display:flex;background:${s.bg};border:1px solid ${s.border};color:${s.color};`;
-      el.innerHTML = `<i class="fa-solid ${s.icon}"></i><span>${s.text}</span>`;
+      el.innerHTML = `<i class="fa-solid ${s.icon}" style="flex-shrink:0;margin-top:2px;"></i><span>${s.text}</span>`;
       window.history.replaceState({}, '', window.location.pathname);
     })();
     </script>

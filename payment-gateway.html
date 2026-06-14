@@ -4,24 +4,161 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>بوابة الدفع - Over Seas</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="style.css" />
     <link rel="shortcut icon" href="logo/logo.png" type="image/x-icon" />
+
+    <style>
+      /* ── Gateway card ── */
+      .gateway-card {
+        background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        padding: 36px 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        animation: gatewayCardIn .35s cubic-bezier(.34,1.4,.64,1) both;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 0 0 0.5px rgba(255,255,255,0.04) inset;
+        width: 100%;
+        max-width: 360px;
+      }
+      @keyframes gatewayCardIn {
+        from { transform: scale(.86) translateY(18px); opacity: 0; }
+        to   { transform: scale(1)   translateY(0);    opacity: 1; }
+      }
+
+      /* ── Spinner ── */
+      .gateway-spinner-wrap {
+        position: relative; width: 76px; height: 76px; margin-bottom: 28px;
+      }
+      .spinner-track {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 3px solid rgba(255,255,255,0.06);
+      }
+      .spinner-ring {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: #4BFDB3;
+        border-right-color: rgba(75,253,179,0.25);
+        animation: gspin .8s linear infinite;
+      }
+      @keyframes gspin { to { transform: rotate(360deg); } }
+
+      /* Method logo pill in spinner centre */
+      .spinner-logo-wrap {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .spinner-logo-pill {
+        width: 48px; height: 48px; border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+        transition: background .3s;
+      }
+      .spinner-logo-pill.pill-card {
+        background: linear-gradient(135deg, #1a2744, #1e3a6e);
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+      .spinner-logo-pill.pill-tabby {
+        background: linear-gradient(135deg, #0a2a1e, #0d3d28);
+        border: 1px solid rgba(75,253,179,0.2);
+      }
+      .spinner-logo-pill.pill-apple {
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .spinner-logo-pill.pill-google {
+        background: linear-gradient(135deg, #1a2030, #1e3050);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .spinner-logo-pill img { width: 30px; height: 30px; object-fit: contain; }
+
+      /* Brand label above card */
+      .gateway-brand {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 20px; font-size: 14px; font-weight: 600;
+        color: rgba(255,255,255,0.55);
+      }
+      .gateway-brand img { height: 22px; object-fit: contain; }
+
+      /* Text */
+      .gateway-card h2 {
+        font-size: 18px; font-weight: 700; color: #fff;
+        margin: 0 0 8px; line-height: 1.4;
+      }
+      .gateway-card p {
+        font-size: 13px; color: rgba(255,255,255,0.38);
+        margin: 0 0 24px; line-height: 1.5;
+      }
+
+      /* Step dots */
+      .gateway-steps { display: flex; gap: 8px; margin-bottom: 28px; }
+      .gateway-step {
+        height: 3px; border-radius: 2px;
+        background: rgba(255,255,255,0.1);
+        transition: background .35s, width .35s;
+        width: 22px;
+      }
+      .gateway-step.active { background: #4BFDB3; width: 36px; }
+      .gateway-step.done   { background: rgba(75,253,179,0.35); width: 22px; }
+
+      /* Divider + secure note */
+      .gateway-divider {
+        width: 100%; height: 1px;
+        background: rgba(255,255,255,0.06);
+        margin-bottom: 18px;
+      }
+      .gateway-secure-note {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 11px; color: rgba(255,255,255,0.22);
+      }
+      .gateway-secure-note i { color: #4BFDB3; font-size: 11px; }
+
+      /* ── Result cards ── */
+      .gateway-result {
+        animation: gatewayCardIn .3s cubic-bezier(.34,1.4,.64,1) both;
+        width: 100%; max-width: 360px;
+      }
+    </style>
   </head>
 
   <body class="gateway-page">
     <div class="gateway-container">
+
       <!-- Processing State -->
       <div class="gateway-processing" id="processingState">
         <div class="gateway-brand" id="gatewayBrand"></div>
-        <div class="gateway-spinner">
-          <div class="spinner-ring"></div>
+
+        <div class="gateway-card">
+          <!-- Spinner + method logo -->
+          <div class="gateway-spinner-wrap">
+            <div class="spinner-track"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-logo-wrap">
+              <div class="spinner-logo-pill pill-card" id="gatewayLogoPill">
+                <img id="gatewayLogoImg" src="logo/visa.png" alt="" />
+              </div>
+            </div>
+          </div>
+
+          <h2 id="processingTitle">جاري الاتصال ببوابة الدفع...</h2>
+          <p id="processingSubtitle">يرجى الانتظار وعدم إغلاق الصفحة</p>
+
+          <!-- Step dots -->
+          <div class="gateway-steps">
+            <div class="gateway-step active" id="gstep0"></div>
+            <div class="gateway-step"        id="gstep1"></div>
+            <div class="gateway-step"        id="gstep2"></div>
+          </div>
+
+          <div class="gateway-divider"></div>
+          <div class="gateway-secure-note">
+            <i class="fa-solid fa-lock"></i>
+            <span>دفع آمن ومشفر بالكامل</span>
+          </div>
         </div>
-        <h2 id="processingTitle">جاري الاتصال ببوابة الدفع...</h2>
-        <p id="processingSubtitle">يرجى الانتظار وعدم إغلاق الصفحة</p>
       </div>
 
       <!-- Success State -->
@@ -88,115 +225,117 @@
           <span>دفع آمن ومشفر</span>
         </div>
       </div>
+
     </div>
 
     <script>
       const METHOD_CONFIG = {
+        card: {
+          name:      'Visa / Mastercard',
+          icon:      'logo/visa.png',
+          pillClass: 'pill-card',
+          bgGradient:'linear-gradient(135deg, #0d1520 0%, #0f1e38 50%, #122240 100%)',
+        },
+        installments: {
+          name:      'Tabby',
+          icon:      'logo/tabby.png',
+          pillClass: 'pill-tabby',
+          bgGradient:'linear-gradient(135deg, #060e0a 0%, #091a11 50%, #0b2016 100%)',
+        },
         apple_pay: {
-          name: "Apple Pay",
-          icon: "logo/Apple_Pay_logo.svg.png",
-          color: "#000000",
-          bgGradient: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          name:      'Apple Pay',
+          icon:      'logo/Apple_Pay_logo.svg.png',
+          pillClass: 'pill-apple',
+          bgGradient:'linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 50%, #222 100%)',
         },
         google_pay: {
-          name: "Google Pay",
-          icon: "logo/Google-Pay-logo.png",
-          color: "#4285F4",
-          bgGradient: "linear-gradient(135deg, #1a1a2e 0%, #1e3a5f 50%, #2d5a88 100%)",
-        },
-        card: {
-          name: "Visa / Mastercard",
-          icon: "logo/visa.png",
-          color: "#1A1F71",
-          bgGradient: "linear-gradient(135deg, #1a1a2e 0%, #1a2744 50%, #1e3a5f 100%)",
-        },
-        tabby: {
-          name: "Tabby",
-          icon: "logo/tabby.png",
-          color: "#4BFDB3",
-          bgGradient: "linear-gradient(135deg, #1a1a2e 0%, #1a3a2e 50%, #1e4a3e 100%)",
+          name:      'Google Pay',
+          icon:      'logo/Google-Pay-logo.png',
+          pillClass: 'pill-google',
+          bgGradient:'linear-gradient(135deg, #0d1520 0%, #1e2a40 50%, #253355 100%)',
         },
       };
 
+      // Step messages
+      const STEP_MSGS = [
+        'جاري الاتصال ببوابة الدفع...',
+        'جاري التحقق من بيانات الدفع...',
+        'جاري معالجة العملية...',
+      ];
+
       function getParams() {
-        const params = new URLSearchParams(window.location.search);
+        const p = new URLSearchParams(window.location.search);
         return {
-          method: params.get("method") || "",
-          amount: params.get("amount") || "0",
-          name: params.get("name") || "",
-          email: params.get("email") || "",
-          phone: params.get("phone") || "",
-          service: params.get("service") || "",
-          action: params.get("action") || "process",
+          method:  p.get('method')  || 'card',
+          amount:  p.get('amount')  || '0',
+          name:    p.get('name')    || '',
+          email:   p.get('email')   || '',
+          phone:   p.get('phone')   || '',
+          service: p.get('service') || '',
+          action:  p.get('action')  || 'process',
         };
       }
 
       function generateTxnId() {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let id = "OS-";
-        for (let i = 0; i < 12; i++) {
-          id += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let id = 'OS-';
+        for (let i = 0; i < 12; i++) id += chars[Math.floor(Math.random() * chars.length)];
         return id;
       }
 
       function showSuccess(data) {
-        document.getElementById("processingState").style.display = "none";
-        const successEl = document.getElementById("successState");
-        successEl.style.display = "block";
-
+        document.getElementById('processingState').style.display = 'none';
+        document.getElementById('successState').style.display    = 'block';
         const config = METHOD_CONFIG[data.method] || METHOD_CONFIG.card;
-        document.getElementById("txnId").textContent = generateTxnId();
-        document.getElementById("resultMethod").textContent = config.name;
-        document.getElementById("resultAmount").textContent = `AED ${Number(data.amount).toFixed(2)}`;
-        document.getElementById("resultService").textContent = data.service || "--";
-        document.getElementById("resultDate").textContent = new Date().toLocaleDateString("ar-AE", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
+        document.getElementById('txnId').textContent        = generateTxnId();
+        document.getElementById('resultMethod').textContent  = config.name;
+        document.getElementById('resultAmount').textContent  = `AED ${Number(data.amount).toFixed(2)}`;
+        document.getElementById('resultService').textContent = data.service || '--';
+        document.getElementById('resultDate').textContent    = new Date().toLocaleDateString('ar-AE', {
+          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
         });
       }
 
       function showCancelled() {
-        document.getElementById("processingState").style.display = "none";
-        document.getElementById("cancelledState").style.display = "block";
+        document.getElementById('processingState').style.display  = 'none';
+        document.getElementById('cancelledState').style.display   = 'block';
       }
 
       function startGateway() {
-        const data = getParams();
-        const config = METHOD_CONFIG[data.method];
+        const data   = getParams();
+        const config = METHOD_CONFIG[data.method] || METHOD_CONFIG.card;
 
-        // Handle cancel action
-        if (data.action === "cancel") {
-          showCancelled();
-          return;
-        }
+        if (data.action === 'cancel') { showCancelled(); return; }
 
-        // Set up brand display
-        if (config) {
-          const brandEl = document.getElementById("gatewayBrand");
-          brandEl.innerHTML = `<img src="${config.icon}" alt="${config.name}" /><span>${config.name}</span>`;
-          document.getElementById("processingTitle").textContent =
-            `جاري الاتصال بـ ${config.name}...`;
-          document.body.style.background = config.bgGradient;
-        }
+        // Apply background
+        document.body.style.background = config.bgGradient;
 
-        // Simulate processing then show success
-        setTimeout(() => {
-          document.getElementById("processingTitle").textContent =
-            "جاري التحقق من بيانات الدفع...";
+        // Brand label
+        const brandEl = document.getElementById('gatewayBrand');
+        brandEl.innerHTML = `<img src="${config.icon}" alt="${config.name}" /><span>${config.name}</span>`;
+
+        // Pill inside spinner
+        document.getElementById('gatewayLogoImg').src          = config.icon;
+        document.getElementById('gatewayLogoPill').className   = `spinner-logo-pill ${config.pillClass}`;
+
+        // First step title
+        document.getElementById('processingTitle').textContent =
+          `جاري الاتصال بـ ${config.name}...`;
+
+        // Animate step dots
+        let step = 0;
+        const stepInterval = setInterval(() => {
+          step++;
+          if (step >= 3) { clearInterval(stepInterval); return; }
+          for (let i = 0; i < 3; i++) {
+            document.getElementById(`gstep${i}`).className =
+              'gateway-step' + (i < step ? ' done' : i === step ? ' active' : '');
+          }
+          document.getElementById('processingTitle').textContent = STEP_MSGS[step];
         }, 1500);
 
-        setTimeout(() => {
-          document.getElementById("processingTitle").textContent =
-            "جاري معالجة العملية...";
-        }, 3000);
-
-        setTimeout(() => {
-          showSuccess(data);
-        }, 4500);
+        // Show success after simulation
+        setTimeout(() => showSuccess(data), 4500);
       }
 
       startGateway();

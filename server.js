@@ -18,14 +18,14 @@ const path = require("path");
   } catch {}
 })();
 
-const PORT             = Number(process.env.PORT || 4173);
-const PUBLIC_BASE_URL  = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
-const ZIINA_API_KEY    = process.env.ZIINA_API_KEY;
-const TABBY_SECRET_KEY = process.env.TABBY_SECRET_KEY;
-const TABBY_PUBLIC_KEY = process.env.TABBY_PUBLIC_KEY;
+const PORT                = Number(process.env.PORT || 4173);
+const PUBLIC_BASE_URL     = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
+const ZIINA_API_KEY       = process.env.ZIINA_API_KEY;
+const TABBY_SECRET_KEY    = process.env.TABBY_SECRET_KEY;
+const TABBY_PUBLIC_KEY    = process.env.TABBY_PUBLIC_KEY;
 const TABBY_MERCHANT_CODE = process.env.TABBY_MERCHANT_CODE || "AE";
-const TABBY_API_BASE   = "https://api.tabby.ai";
-const ZIINA_API_BASE   = "https://api-v2.ziina.com/api";
+const TABBY_API_BASE      = "https://api.tabby.ai";
+const ZIINA_API_BASE      = "https://api-v2.ziina.com/api";
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -44,8 +44,8 @@ function sendJson(res, status, data) {
   res.writeHead(status, {
     "Content-Type":                "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers":"Content-Type",
-    "Access-Control-Allow-Methods":"POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
   });
   res.end(JSON.stringify(data));
 }
@@ -64,6 +64,10 @@ function readJsonBody(req) {
   });
 }
 
+function hasTabbyKey() {
+  return TABBY_SECRET_KEY && TABBY_SECRET_KEY.length >= 10;
+}
+
 // ════════════════════════════════════════════════════════════
 // ZIINA — Card / Apple Pay / Google Pay
 // POST /api/ziina/checkout
@@ -72,11 +76,12 @@ async function ziinaCheckout(req, res) {
   try {
     const p = await readJsonBody(req);
 
-    const missing = ["name","phone","email","service","amount"].find(f => !p[f]);
+    const missing = ["name", "phone", "email", "service", "amount"].find(f => !p[f]);
     if (missing) return sendJson(res, 400, { message: `Missing: ${missing}` });
 
     if (!ZIINA_API_KEY) {
-      // No key — demo mode
+      // No API key — demo/test mode
+      console.log("[Ziina] No API key — returning test_mode");
       return sendJson(res, 200, { test_mode: true });
     }
 
@@ -84,12 +89,12 @@ async function ziinaCheckout(req, res) {
     const amountFils = Math.round(Number(p.amount) * 100);
 
     const payload = {
-      amount:       amountFils,
+      amount:        amountFils,
       currency_code: "AED",
-      message:      p.service || "Over Seas Payment",
-      success_url:  `${PUBLIC_BASE_URL}/payment.html?status=success`,
-      cancel_url:   `${PUBLIC_BASE_URL}/payment.html?status=cancelled`,
-      // test: true,  // ← uncomment to test without real charges
+      message:       p.service || "Over Seas Payment",
+      success_url:   `${PUBLIC_BASE_URL}/payment.html?status=success`,
+      cancel_url:    `${PUBLIC_BASE_URL}/payment.html?status=cancelled`,
+      // test: true, // ← uncomment to test without real charges
     };
 
     console.log("[Ziina][checkout] Sending:", JSON.stringify(payload));
@@ -111,7 +116,6 @@ async function ziinaCheckout(req, res) {
       return sendJson(res, 502, { message: ziinaData?.message || "Ziina error. Check your API key." });
     }
 
-    // Ziina returns redirect_url — send it to the frontend
     const redirectUrl = ziinaData?.redirect_url;
     if (!redirectUrl) {
       return sendJson(res, 502, { message: "Ziina did not return a redirect URL." });
@@ -126,8 +130,7 @@ async function ziinaCheckout(req, res) {
 }
 
 // ════════════════════════════════════════════════════════════
-// TABBY — Installments only
-// POST /api/tabby/eligibility
+// TABBY — Installments
 // ════════════════════════════════════════════════════════════
 function tabbyHeaders() {
   return {
@@ -198,25 +201,41 @@ function extractRejectionReason(data) {
   return installments[0]?.rejection_reason || "not_available";
 }
 
+// POST /api/tabby/eligibility
+// (kept for optional future use; frontend no longer calls this proactively)
 async function tabbyEligibility(req, res) {
   try {
     const p = await readJsonBody(req);
     if (!p.amount || !p.buyer_email || !p.buyer_phone) {
       return sendJson(res, 400, { eligible: false, rejection_reason: "missing_fields" });
     }
-    if (!TABBY_SECRET_KEY || TABBY_SECRET_KEY.length < 10) {
-      return sendJson(res, 200, { eligible: false, rejection_reason: "not_available" });
+
+    // No Tabby key → optimistic eligible (let checkout decide)
+    if (!hasTabbyKey()) {
+      console.log("[Tabby][eligibility] No key — returning eligible:true (dev mode)");
+      return sendJson(res, 200, { eligible: true });
     }
-    const payload  = buildTabbyPayload({ amount: p.amount, phone: p.buyer_phone, email: p.buyer_email, name: p.buyer_name || "", service: "Eligibility Check" }, false);
-    const tabbyRes = await fetch(`${TABBY_API_BASE}/api/v2/checkout`, { method: "POST", headers: tabbyHeaders(), body: JSON.stringify(payload) });
+
+    const payload  = buildTabbyPayload({
+      amount: p.amount, phone: p.buyer_phone,
+      email: p.buyer_email, name: p.buyer_name || "",
+      service: "Eligibility Check",
+    }, false);
+
+    const tabbyRes  = await fetch(`${TABBY_API_BASE}/api/v2/checkout`, {
+      method: "POST", headers: tabbyHeaders(), body: JSON.stringify(payload),
+    });
     const tabbyData = await tabbyRes.json();
+
     if (tabbyData?.status === "rejected") {
       return sendJson(res, 200, { eligible: false, rejection_reason: extractRejectionReason(tabbyData) });
     }
     return sendJson(res, 200, { eligible: true });
+
   } catch (err) {
     console.error("[Tabby][eligibility] error:", err.message);
-    return sendJson(res, 200, { eligible: false, rejection_reason: "not_available" });
+    // On error, stay optimistic — let actual checkout fail if needed
+    return sendJson(res, 200, { eligible: true });
   }
 }
 
@@ -224,22 +243,40 @@ async function tabbyEligibility(req, res) {
 async function tabbyCheckout(req, res) {
   try {
     const p = await readJsonBody(req);
-    const missing = ["name","phone","email","service","amount"].find(f => !p[f]);
+    const missing = ["name", "phone", "email", "service", "amount"].find(f => !p[f]);
     if (missing) return sendJson(res, 400, { message: `Missing: ${missing}` });
-    if (!TABBY_SECRET_KEY || TABBY_SECRET_KEY.length < 10) {
-      return sendJson(res, 200, { status: "rejected", rejection_reason: "not_available" });
+
+    // No Tabby key → demo/test mode (same pattern as Ziina)
+    if (!hasTabbyKey()) {
+      console.log("[Tabby][checkout] No key — returning test_mode");
+      return sendJson(res, 200, { test_mode: true });
     }
+
     const payload  = buildTabbyPayload(p);
-    const tabbyRes = await fetch(`${TABBY_API_BASE}/api/v2/checkout`, { method: "POST", headers: tabbyHeaders(), body: JSON.stringify(payload) });
+    const tabbyRes = await fetch(`${TABBY_API_BASE}/api/v2/checkout`, {
+      method: "POST", headers: tabbyHeaders(), body: JSON.stringify(payload),
+    });
     const tabbyData = await tabbyRes.json();
+
+    console.log("[Tabby][checkout] HTTP:", tabbyRes.status, "| Status:", tabbyData?.status);
+
     if (tabbyData?.status === "rejected") {
-      return sendJson(res, 200, { status: "rejected", rejection_reason: extractRejectionReason(tabbyData) });
+      return sendJson(res, 200, {
+        status: "rejected",
+        rejection_reason: extractRejectionReason(tabbyData),
+      });
     }
-    const products = tabbyData?.configuration?.available_products;
+
+    const products     = tabbyData?.configuration?.available_products;
     const installments = products?.installments;
-    const webUrl = installments?.[0]?.web_url || tabbyData?.web_url || null;
-    if (!webUrl) return sendJson(res, 502, { message: "Tabby did not return a checkout URL." });
+    const webUrl       = installments?.[0]?.web_url || tabbyData?.web_url || null;
+
+    if (!webUrl) {
+      return sendJson(res, 502, { message: "Tabby did not return a checkout URL." });
+    }
+
     return sendJson(res, 200, { web_url: webUrl });
+
   } catch (err) {
     console.error("[Tabby][checkout] error:", err.message);
     return sendJson(res, 500, { message: err.message });
@@ -266,21 +303,31 @@ function serveStatic(req, res) {
 // ── Router ───────────────────────────────────────────────────
 const server = http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
-    res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Allow-Methods": "POST, OPTIONS" });
-    res.end(); return;
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin":  "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+    });
+    res.end();
+    return;
   }
+
   const url = req.url.split("?")[0];
+
   if (req.method === "POST") {
-    if (url === "/api/ziina/checkout")      return ziinaCheckout(req, res);
-    if (url === "/api/tabby/eligibility")   return tabbyEligibility(req, res);
-    if (url === "/api/tabby/checkout")      return tabbyCheckout(req, res);
+    if (url === "/api/ziina/checkout")    return ziinaCheckout(req, res);
+    if (url === "/api/tabby/eligibility") return tabbyEligibility(req, res);
+    if (url === "/api/tabby/checkout")    return tabbyCheckout(req, res);
   }
+
   if (req.method === "GET") return serveStatic(req, res);
-  res.writeHead(405); res.end("Method not allowed");
+
+  res.writeHead(405);
+  res.end("Method not allowed");
 });
 
 server.listen(PORT, () => {
   console.log(`\n🌍 Over Seas running at http://localhost:${PORT}`);
-  console.log(ZIINA_API_KEY ? "✅ Ziina key loaded" : "⚠  No ZIINA_API_KEY set");
-  console.log(TABBY_SECRET_KEY ? "✅ Tabby key loaded" : "⚠  No TABBY_SECRET_KEY set");
+  console.log(ZIINA_API_KEY  ? "✅ Ziina key loaded"        : "⚠  No ZIINA_API_KEY  → demo mode");
+  console.log(hasTabbyKey()  ? "✅ Tabby secret key loaded" : "⚠  No TABBY_SECRET_KEY → demo mode");
 });
