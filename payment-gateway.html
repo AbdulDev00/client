@@ -9,7 +9,6 @@
     <link rel="shortcut icon" href="logo/logo.png" type="image/x-icon" />
 
     <style>
-      /* ── Gateway card ── */
       .gateway-card {
         background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%);
         border: 1px solid rgba(255,255,255,0.1);
@@ -29,7 +28,6 @@
         to   { transform: scale(1)   translateY(0);    opacity: 1; }
       }
 
-      /* ── Spinner ── */
       .gateway-spinner-wrap {
         position: relative; width: 76px; height: 76px; margin-bottom: 28px;
       }
@@ -46,7 +44,6 @@
       }
       @keyframes gspin { to { transform: rotate(360deg); } }
 
-      /* Method logo pill in spinner centre */
       .spinner-logo-wrap {
         position: absolute; inset: 0;
         display: flex; align-items: center; justify-content: center;
@@ -75,7 +72,6 @@
       }
       .spinner-logo-pill img { width: 30px; height: 30px; object-fit: contain; }
 
-      /* Brand label above card */
       .gateway-brand {
         display: flex; align-items: center; gap: 10px;
         margin-bottom: 20px; font-size: 14px; font-weight: 600;
@@ -83,7 +79,6 @@
       }
       .gateway-brand img { height: 22px; object-fit: contain; }
 
-      /* Text */
       .gateway-card h2 {
         font-size: 18px; font-weight: 700; color: #fff;
         margin: 0 0 8px; line-height: 1.4;
@@ -93,7 +88,6 @@
         margin: 0 0 24px; line-height: 1.5;
       }
 
-      /* Step dots */
       .gateway-steps { display: flex; gap: 8px; margin-bottom: 28px; }
       .gateway-step {
         height: 3px; border-radius: 2px;
@@ -104,7 +98,6 @@
       .gateway-step.active { background: #4BFDB3; width: 36px; }
       .gateway-step.done   { background: rgba(75,253,179,0.35); width: 22px; }
 
-      /* Divider + secure note */
       .gateway-divider {
         width: 100%; height: 1px;
         background: rgba(255,255,255,0.06);
@@ -116,11 +109,100 @@
       }
       .gateway-secure-note i { color: #4BFDB3; font-size: 11px; }
 
-      /* ── Result cards ── */
       .gateway-result {
         animation: gatewayCardIn .3s cubic-bezier(.34,1.4,.64,1) both;
         width: 100%; max-width: 360px;
       }
+
+      .result-icon {
+        width: 72px; height: 72px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 30px;
+      }
+      .result-icon.success-icon {
+        background: rgba(74,222,128,0.12);
+        color: #4ade80;
+        border: 2px solid rgba(74,222,128,0.2);
+      }
+      .result-icon.cancel-icon {
+        background: rgba(251,191,36,0.12);
+        color: #fbbf24;
+        border: 2px solid rgba(251,191,36,0.2);
+      }
+
+      .gateway-result h2 {
+        font-size: 20px; font-weight: 700; color: #fff;
+        text-align: center; margin: 0 0 4px;
+      }
+      .result-subtitle {
+        text-align: center; color: rgba(255,255,255,0.4);
+        font-size: 14px; margin: 0 0 24px;
+      }
+
+      .result-details {
+        background: rgba(255,255,255,0.03);
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.06);
+        padding: 4px 0;
+        margin-bottom: 20px;
+      }
+      .result-row {
+        display: flex; justify-content: space-between;
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        font-size: 13px;
+      }
+      .result-row:last-child { border-bottom: none; }
+      .result-row span { color: rgba(255,255,255,0.4); }
+      .result-row strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+      .result-notice {
+        display: flex; align-items: center; gap: 10px;
+        background: rgba(75,253,179,0.06);
+        border: 1px solid rgba(75,253,179,0.12);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: rgba(255,255,255,0.55);
+        margin-bottom: 20px;
+      }
+      .result-notice i { color: #4BFDB3; font-size: 16px; }
+
+      .gateway-back-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 12px 28px; border-radius: 12px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.75);
+        font-weight: 600; font-size: 14px;
+        text-decoration: none; transition: all .2s;
+        justify-content: center; width: 100%;
+      }
+      .gateway-back-btn:hover {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+      }
+      .gateway-back-btn i { font-size: 13px; }
+
+      .gateway-container {
+        min-height: 100vh;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 24px;
+      }
+
+      .gateway-footer {
+        margin-top: 40px;
+        display: flex; align-items: center; gap: 20px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.15);
+      }
+      .gateway-footer-logo { height: 28px; opacity: 0.5; }
+      .gateway-footer-secure {
+        display: flex; align-items: center; gap: 6px;
+      }
+      .gateway-footer-secure i { color: #4BFDB3; font-size: 12px; }
     </style>
   </head>
 
@@ -132,7 +214,6 @@
         <div class="gateway-brand" id="gatewayBrand"></div>
 
         <div class="gateway-card">
-          <!-- Spinner + method logo -->
           <div class="gateway-spinner-wrap">
             <div class="spinner-track"></div>
             <div class="spinner-ring"></div>
@@ -146,7 +227,6 @@
           <h2 id="processingTitle">جاري الاتصال ببوابة الدفع...</h2>
           <p id="processingSubtitle">يرجى الانتظار وعدم إغلاق الصفحة</p>
 
-          <!-- Step dots -->
           <div class="gateway-steps">
             <div class="gateway-step active" id="gstep0"></div>
             <div class="gateway-step"        id="gstep1"></div>
@@ -217,7 +297,6 @@
         </a>
       </div>
 
-      <!-- Gateway Footer -->
       <div class="gateway-footer">
         <img src="logo/logo.png" alt="Over Seas" class="gateway-footer-logo" />
         <div class="gateway-footer-secure">
@@ -256,7 +335,6 @@
         },
       };
 
-      // Step messages
       const STEP_MSGS = [
         'جاري الاتصال ببوابة الدفع...',
         'جاري التحقق من بيانات الدفع...',
@@ -266,13 +344,14 @@
       function getParams() {
         const p = new URLSearchParams(window.location.search);
         return {
-          method:  p.get('method')  || 'card',
-          amount:  p.get('amount')  || '0',
-          name:    p.get('name')    || '',
-          email:   p.get('email')   || '',
-          phone:   p.get('phone')   || '',
-          service: p.get('service') || '',
-          action:  p.get('action')  || 'process',
+          method:         p.get('method')  || 'card',
+          amount:         p.get('amount')  || '0',
+          name:           p.get('name')    || '',
+          email:          p.get('email')   || '',
+          phone:          p.get('phone')   || '',
+          service:        p.get('service') || '',
+          inquiryMessage: p.get('inquiryMessage') || '',
+          action:         p.get('action')  || 'process',
         };
       }
 
@@ -283,16 +362,51 @@
         return id;
       }
 
+      async function sendPaymentData(data) {
+        try {
+          const response = await fetch('/api/send-payment-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: data.name,
+              phone: data.phone,
+              email: data.email,
+              service: data.service,
+              inquiryMessage: data.inquiryMessage || '',
+              amount: data.amount,
+              transactionId: generateTxnId(),
+              paymentMethod: data.method,
+            }),
+          });
+          const result = await response.json();
+          console.log('Email send result:', result);
+        } catch (err) {
+          console.error('Failed to send email:', err);
+        }
+      }
+
       function showSuccess(data) {
         document.getElementById('processingState').style.display = 'none';
         document.getElementById('successState').style.display    = 'block';
         const config = METHOD_CONFIG[data.method] || METHOD_CONFIG.card;
-        document.getElementById('txnId').textContent        = generateTxnId();
+        const txnId = generateTxnId();
+        document.getElementById('txnId').textContent        = txnId;
         document.getElementById('resultMethod').textContent  = config.name;
         document.getElementById('resultAmount').textContent  = `AED ${Number(data.amount).toFixed(2)}`;
         document.getElementById('resultService').textContent = data.service || '--';
         document.getElementById('resultDate').textContent    = new Date().toLocaleDateString('ar-AE', {
           year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+        });
+
+        // Send email notification
+        sendPaymentData({
+          name: data.name,
+          phone: data.phone,
+          email: data.email,
+          service: data.service,
+          inquiryMessage: data.inquiryMessage,
+          amount: data.amount,
+          method: data.method,
         });
       }
 
@@ -307,22 +421,17 @@
 
         if (data.action === 'cancel') { showCancelled(); return; }
 
-        // Apply background
         document.body.style.background = config.bgGradient;
 
-        // Brand label
         const brandEl = document.getElementById('gatewayBrand');
         brandEl.innerHTML = `<img src="${config.icon}" alt="${config.name}" /><span>${config.name}</span>`;
 
-        // Pill inside spinner
         document.getElementById('gatewayLogoImg').src          = config.icon;
         document.getElementById('gatewayLogoPill').className   = `spinner-logo-pill ${config.pillClass}`;
 
-        // First step title
         document.getElementById('processingTitle').textContent =
           `جاري الاتصال بـ ${config.name}...`;
 
-        // Animate step dots
         let step = 0;
         const stepInterval = setInterval(() => {
           step++;
@@ -334,7 +443,6 @@
           document.getElementById('processingTitle').textContent = STEP_MSGS[step];
         }, 1500);
 
-        // Show success after simulation
         setTimeout(() => showSuccess(data), 4500);
       }
 

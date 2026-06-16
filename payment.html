@@ -85,6 +85,50 @@
         border-radius: 5px; padding: 2px 6px; font-size: 10px; font-weight: 700;
       }
 
+      /* ── Inquiry Message Box ── */
+      .inquiry-message-box {
+        display: none;
+        grid-column: 1 / -1;
+        margin-top: 4px;
+      }
+      .inquiry-message-box.visible {
+        display: block;
+      }
+      .inquiry-message-box label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        margin-bottom: 6px;
+      }
+      .inquiry-message-box textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 12px 14px;
+        background: rgba(255,255,255,0.05);
+        border: 1.5px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        color: #fff;
+        font-size: 14px;
+        font-family: inherit;
+        resize: vertical;
+        outline: none;
+        transition: border-color .15s;
+      }
+      .inquiry-message-box textarea:focus {
+        border-color: rgba(75,253,179,0.5);
+      }
+      .inquiry-message-box textarea::placeholder {
+        color: rgba(255,255,255,0.25);
+      }
+      .inquiry-message-box .char-count {
+        font-size: 11px;
+        color: rgba(255,255,255,0.25);
+        text-align: left;
+        margin-top: 4px;
+        direction: ltr;
+      }
+
       /* ── Tabby badge ── */
       .tabby-badge {
         display: none; border: 1px solid rgba(75,253,179,0.2); border-radius: 14px;
@@ -347,9 +391,21 @@
                   <option>حجز موعد التأشيرة</option>
                   <option>باقات العطلات</option>
                   <option>التأمين الصحي في ضمان</option>
-                  <option>استفسار أو خدمة مخصصة</option>
+                  <option value="inquiry">استفسار أو خدمة مخصصة</option>
                 </select>
               </label>
+              
+              <!-- Inquiry Message Box -->
+              <div class="inquiry-message-box" id="inquiryMessageBox">
+                <label for="inquiryMessage">تفاصيل الاستفسار أو الخدمة المخصصة</label>
+                <textarea 
+                  id="inquiryMessage" 
+                  placeholder="اكتب تفاصيل استفسارك أو طلب الخدمة المخصصة هنا..."
+                  maxlength="1000"
+                ></textarea>
+                <div class="char-count"><span id="charCount">0</span> / 1000</div>
+              </div>
+
               <label class="amount-field">
                 <span>المبلغ المطلوب (AED)</span>
                 <div class="amount-input">
@@ -521,12 +577,31 @@
 
     const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:4173' : '';
 
-    // ── Loader state (module-scoped so closeLoader can reach it) ──
+    // ── Inquiry Message Box ──────────────────────────────────
+    const serviceSelect = document.getElementById('serviceSelect');
+    const inquiryBox = document.getElementById('inquiryMessageBox');
+    const inquiryMessage = document.getElementById('inquiryMessage');
+    const charCount = document.getElementById('charCount');
+
+    serviceSelect.addEventListener('change', function() {
+      if (this.value === 'inquiry') {
+        inquiryBox.classList.add('visible');
+        inquiryMessage.setAttribute('required', 'required');
+      } else {
+        inquiryBox.classList.remove('visible');
+        inquiryMessage.removeAttribute('required');
+      }
+    });
+
+    inquiryMessage.addEventListener('input', function() {
+      charCount.textContent = this.value.length;
+    });
+
+    // ── Loader state ──────────────────────────────────────────
     let _loaderInterval = null;
     let _loaderStep     = 0;
 
     function openLoader(isTabby) {
-      // Set the correct logo + pill style
       const img   = document.getElementById('loaderMethodImg');
       const pill  = document.getElementById('loaderPillInner');
       if (isTabby) {
@@ -537,7 +612,6 @@
         pill.className = 'loader-method-pill-inner pill-card';
       }
 
-      // Reset dots
       _loaderStep = 0;
       for (let i = 0; i < 3; i++) {
         document.getElementById(`lstep${i}`).className =
@@ -548,7 +622,6 @@
       document.getElementById('processingOverlay').classList.add('active');
       document.getElementById('payBtn').disabled = true;
 
-      // Animate step dots
       _loaderInterval = setInterval(() => {
         _loaderStep++;
         if (_loaderStep > 2) { clearInterval(_loaderInterval); _loaderInterval = null; return; }
@@ -565,7 +638,6 @@
       document.getElementById('payBtn').disabled = false;
     }
 
-    // Close loader on ANY page show — handles bfcache back-navigation from Tabby/Ziina
     window.addEventListener('pageshow', () => closeLoader());
 
     // ── Fee rates ─────────────────────────────────────────────
@@ -586,7 +658,6 @@
       return document.querySelector('input[name="paymentMethod"]:checked')?.value || 'card';
     }
 
-    // ── Update fee breakdown ──────────────────────────────────
     function updateFees() {
       const base   = Number(document.getElementById('amountInput').value || 0);
       const method = selectedMethod();
@@ -600,7 +671,6 @@
       document.getElementById('serviceBadge').textContent = method === 'installments' ? '5%' : '1%';
     }
 
-    // ── Tabby chips ───────────────────────────────────────────
     function renderTabbyChips(base) {
       const f    = calcFees(base, 'installments');
       const each = (f.total / 4).toFixed(2);
@@ -658,6 +728,7 @@
         phone:          document.getElementById('customerPhone').value.trim(),
         email:          document.getElementById('customerEmail').value.trim(),
         service:        document.getElementById('serviceSelect').value,
+        inquiryMessage: document.getElementById('inquiryMessage').value.trim(),
         amount:         base,
         totalAmount:    f.total,
         vatAmount:      f.vat,
@@ -671,6 +742,7 @@
       if (!d.phone)               return 'يرجى إدخال رقم الهاتف.';
       if (!d.email.includes('@')) return 'يرجى إدخال بريد إلكتروني صحيح.';
       if (!d.service)             return 'يرجى اختيار الخدمة.';
+      if (d.service === 'inquiry' && !d.inquiryMessage) return 'يرجى كتابة تفاصيل الاستفسار أو الخدمة المخصصة.';
       if (d.amount < 1)           return 'يرجى إدخال مبلغ لا يقل عن 1 درهم.';
       return null;
     }
@@ -704,6 +776,7 @@
             phone:          data.phone,
             email:          data.email,
             service:        data.service,
+            inquiryMessage: data.inquiryMessage,
             amount:         chargeAmount,
             currency:       'AED',
             payment_method: data.payment_method,
@@ -718,12 +791,13 @@
         } else if (json.test_mode) {
           document.getElementById('processingTitle').textContent = 'وضع الاختبار — جاري التحويل...';
           const p = new URLSearchParams({
-            method:  data.payment_method,
-            amount:  chargeAmount,
-            name:    data.name,
-            email:   data.email,
-            phone:   data.phone,
-            service: data.service,
+            method:         data.payment_method,
+            amount:         chargeAmount,
+            name:           data.name,
+            email:          data.email,
+            phone:          data.phone,
+            service:        data.service,
+            inquiryMessage: data.inquiryMessage,
           });
           window.location.href = `payment-gateway.html?${p}`;
 
