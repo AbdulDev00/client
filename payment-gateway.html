@@ -277,10 +277,10 @@
           <span>سيتم إرسال تأكيد الدفع إلى بريدك الإلكتروني</span>
         </div>
 
-        <a href="payment.html" class="gateway-back-btn">
-          <i class="fa-solid fa-arrow-right"></i>
-          العودة لصفحة الدفع
-        </a>
+      <div class="gateway-back-btn" onclick="window.location.href='payment.html?status=cancelled'">
+  <i class="fa-solid fa-arrow-right"></i>
+  العودة لصفحة الدفع
+</div>
       </div>
 
       <!-- Cancelled State -->
@@ -291,10 +291,10 @@
         <h2>تم إلغاء عملية الدفع</h2>
         <p class="result-subtitle">لم يتم خصم أي مبلغ من حسابك</p>
 
-        <a href="payment.html" class="gateway-back-btn">
-          <i class="fa-solid fa-arrow-right"></i>
-          العودة والمحاولة مرة أخرى
-        </a>
+      <a href="payment.html?status=cancelled" class="gateway-back-btn">
+  <i class="fa-solid fa-arrow-right"></i>
+  العودة والمحاولة مرة أخرى
+</a>
       </div>
 
       <div class="gateway-footer">
@@ -362,53 +362,72 @@
         return id;
       }
 
-      async function sendPaymentData(data) {
-        try {
-          const response = await fetch('/api/send-payment-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: data.name,
-              phone: data.phone,
-              email: data.email,
-              service: data.service,
-              inquiryMessage: data.inquiryMessage || '',
-              amount: data.amount,
-              transactionId: generateTxnId(),
-              paymentMethod: data.method,
-            }),
-          });
-          const result = await response.json();
-          console.log('Email send result:', result);
-        } catch (err) {
-          console.error('Failed to send email:', err);
-        }
-      }
-
-      function showSuccess(data) {
-        document.getElementById('processingState').style.display = 'none';
-        document.getElementById('successState').style.display    = 'block';
-        const config = METHOD_CONFIG[data.method] || METHOD_CONFIG.card;
-        const txnId = generateTxnId();
-        document.getElementById('txnId').textContent        = txnId;
-        document.getElementById('resultMethod').textContent  = config.name;
-        document.getElementById('resultAmount').textContent  = `AED ${Number(data.amount).toFixed(2)}`;
-        document.getElementById('resultService').textContent = data.service || '--';
-        document.getElementById('resultDate').textContent    = new Date().toLocaleDateString('ar-AE', {
-          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
-        });
-
-        // Send email notification
-        sendPaymentData({
+  async function sendPaymentData(data) {
+    try {
+      // Use the PUBLIC_BASE_URL from the page or construct from current location
+      // If PUBLIC_BASE_URL is set in .env, it will be available via meta tag or we can detect it
+      const baseUrl = window.location.origin; // Gets the current domain (Railway or localhost)
+      
+      console.log('Sending email to:', `${baseUrl}/api/send-payment-email`);
+      console.log('Payment data:', data);
+      
+      const response = await fetch(`${baseUrl}/api/send-payment-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: data.name,
           phone: data.phone,
           email: data.email,
           service: data.service,
-          inquiryMessage: data.inquiryMessage,
+          inquiryMessage: data.inquiryMessage || '',
           amount: data.amount,
-          method: data.method,
-        });
+          transactionId: generateTxnId(),
+          paymentMethod: data.method,
+        }),
+      });
+      
+      const result = await response.json();
+      console.log('Email send result:', result);
+      
+      if (!response.ok) {
+        console.error('Email sending failed:', result);
       }
+    } catch (err) {
+      console.error('Failed to send email:', err);
+      // Don't block the user experience if email fails
+    }
+  }
+
+   function showSuccess(data) {
+  document.getElementById('processingState').style.display = 'none';
+  document.getElementById('successState').style.display    = 'block';
+  const config = METHOD_CONFIG[data.method] || METHOD_CONFIG.card;
+  const txnId = generateTxnId();
+  document.getElementById('txnId').textContent        = txnId;
+  document.getElementById('resultMethod').textContent  = config.name;
+  document.getElementById('resultAmount').textContent  = `AED ${Number(data.amount).toFixed(2)}`;
+  document.getElementById('resultService').textContent = data.service || '--';
+  document.getElementById('resultDate').textContent    = new Date().toLocaleDateString('ar-AE', {
+    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+
+  // Send email notification
+  sendPaymentData({
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    service: data.service,
+    inquiryMessage: data.inquiryMessage,
+    amount: data.amount,
+    method: data.method,
+  });
+  
+  // Redirect back to payment.html with success status after 3 seconds
+  setTimeout(() => {
+    window.location.href = 'payment.html?status=success';
+  }, 3000);
+}
+
 
       function showCancelled() {
         document.getElementById('processingState').style.display  = 'none';

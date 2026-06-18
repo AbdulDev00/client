@@ -300,10 +300,95 @@
         .payment-method-list { grid-template-columns: 1fr; }
         .loader-card { width: calc(100vw - 40px); padding: 28px 24px 24px; }
       }
+      /* Toast Notification */
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 380px;
+    width: 100%;
+  }
+  
+  .toast {
+    background: rgba(10, 16, 24, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    animation: toastIn .4s cubic-bezier(.34,1.4,.64,1) both;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  
+  .toast.success { border-right: 3px solid #4ade80; }
+  .toast.error { border-right: 3px solid #f87171; }
+  .toast.info { border-right: 3px solid #60a5fa; }
+  
+  @keyframes toastIn {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  
+  .toast-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+  .toast.success .toast-icon {
+    background: rgba(74,222,128,0.12);
+    color: #4ade80;
+  }
+  .toast.error .toast-icon {
+    background: rgba(248,113,113,0.12);
+    color: #f87171;
+  }
+  .toast.info .toast-icon {
+    background: rgba(96,165,250,0.12);
+    color: #60a5fa;
+  }
+  
+  .toast-content {
+    flex: 1;
+  }
+  .toast-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    margin: 0 0 4px;
+  }
+  .toast-message {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    margin: 0;
+    line-height: 1.4;
+  }
+  .toast-close {
+    background: none; border: none;
+    color: rgba(255,255,255,0.25);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    transition: color .2s;
+    flex-shrink: 0;
+    margin-top: -2px;
+  }
+  .toast-close:hover { color: rgba(255,255,255,0.6); }
     </style>
+   
+
   </head>
 
   <body class="payment-page">
+<div class="toast-container" id="toastContainer"></div>
+
     <header>
       <div class="logo"><img src="logo/logo.png" alt="Over Seas" /></div>
       <nav>
@@ -856,5 +941,73 @@
       window.history.replaceState({}, '', window.location.pathname);
     })();
     </script>
+    
+
+<script>
+  // Toast notification function
+  function showToast(title, message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const icons = {
+      success: 'fa-circle-check',
+      error: 'fa-circle-xmark',
+      info: 'fa-circle-info'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <div class="toast-icon"><i class="fa-solid ${icons[type] || icons.info}"></i></div>
+      <div class="toast-content">
+        <p class="toast-title">${title}</p>
+        <p class="toast-message">${message}</p>
+      </div>
+      <button class="toast-close" onclick="this.parentElement.remove()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after 6 seconds
+    setTimeout(() => {
+      if (toast.parentElement) toast.remove();
+    }, 6000);
+  }
+
+  // Handle return redirects with toast notification
+  (function handleReturn() {
+    const status = new URLSearchParams(window.location.search).get('status');
+    if (!status) return;
+    
+    const configs = {
+      success: {
+        title: '✅ تم الدفع بنجاح!',
+        message: 'شكراً لك! سيتم إرسال تأكيد الدفع إلى بريدك الإلكتروني قريباً.',
+        type: 'success'
+      },
+      cancelled: {
+        title: '❌ تم الإلغاء',
+        message: 'ألغيت عملية الدفع. يمكنك المحاولة مجدداً.',
+        type: 'error'
+      },
+      failed: {
+        title: '⚠️ فشلت العملية',
+        message: 'لم تتم عملية الدفع. يرجى المحاولة مرة أخرى.',
+        type: 'error'
+      }
+    };
+    
+    const cfg = configs[status];
+    if (!cfg) return;
+    
+    // Show toast after a small delay
+    setTimeout(() => {
+      showToast(cfg.title, cfg.message, cfg.type);
+    }, 500);
+    
+    // Remove status from URL
+    window.history.replaceState({}, '', window.location.pathname);
+  })();
+</script>
   </body>
 </html>

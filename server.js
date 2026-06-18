@@ -58,7 +58,7 @@ function sendJson(res, status, data) {
     "Content-Type":                "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   });
   res.end(JSON.stringify(data));
 }
@@ -83,8 +83,21 @@ function hasTabbyKey() {
 
 // ── Email Handler ────────────────────────────────────────────
 async function sendPaymentEmail(req, res) {
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+    });
+    res.end();
+    return;
+  }
+
   try {
     const data = await readJsonBody(req);
+    
+    console.log('[Email] Received data:', JSON.stringify(data, null, 2));
     
     const required = ['name', 'phone', 'email', 'service', 'amount', 'transactionId', 'paymentMethod'];
     const missing = required.find(f => !data[f]);
@@ -199,7 +212,23 @@ ${data.service === 'inquiry' && data.inquiryMessage ? `تفاصيل الاستف
 الحالة: مكتمل
 ─────────────────────────────`;
 
-    const transporter = nodemailer.createTransport(EMAIL_CONFIG);
+    // Create transporter with better error handling
+    const transporter = nodemailer.createTransport({
+      ...EMAIL_CONFIG,
+      connectionTimeout: 10000, // 10 seconds timeout
+    });
+
+    // Verify connection before sending
+    try {
+      await transporter.verify();
+      console.log('[Email] SMTP connection verified');
+    } catch (verifyErr) {
+      console.error('[Email] SMTP verification failed:', verifyErr.message);
+      return sendJson(res, 500, { 
+        error: 'Email server connection failed',
+        details: verifyErr.message 
+      });
+    }
 
     const info = await transporter.sendMail({
       from: `"Over Seas Payments" <${EMAIL_CONFIG.auth.user}>`,
@@ -216,13 +245,15 @@ ${data.service === 'inquiry' && data.inquiryMessage ? `تفاصيل الاستف
       success: true,
       message: 'Email sent successfully',
       transaction_id: data.transactionId,
+      messageId: info.messageId,
     });
 
   } catch (err) {
     console.error('[Email] error:', err.message);
+    console.error('[Email] stack:', err.stack);
     sendJson(res, 500, { 
-      error: err.message,
-      details: err.stack 
+      error: 'Failed to send email',
+      details: err.message 
     });
   }
 }
@@ -449,7 +480,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
     });
     res.end();
     return;
@@ -472,6 +503,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n🌍 Over Seas running at http://localhost:${PORT}`);
+  console.log(`📧 Email notifications will be sent to: Overseastravel.contact@gmail.com`);
   console.log(ZIINA_API_KEY  ? "✅ Ziina key loaded"        : "⚠  No ZIINA_API_KEY  → demo mode");
   console.log(hasTabbyKey()  ? "✅ Tabby secret key loaded" : "⚠  No TABBY_SECRET_KEY → demo mode");
   console.log("✅ Email notification endpoint: /api/send-payment-email");
